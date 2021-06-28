@@ -105,7 +105,7 @@ class LruCache {
     }
 
     /**
-     * 从列表中删除节点
+     * 移动node
      * @param Node $node the node to remove from the list
      */
     private function detach($node) {
