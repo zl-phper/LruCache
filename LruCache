@@ -1,0 +1,200 @@
+<?php
+
+namespace LruCache;
+
+/**
+ * Class LruCache
+ * @package LRUCache
+ */
+class LruCache {
+
+    private $head;
+
+    private $tail;
+    // 最大元素数
+    private $capacity;
+
+    //  array
+    private $hashmap;
+
+    /**
+     * @param int $capacity 支持最大个数
+     */
+    public function __construct($capacity) {
+        $this->capacity = $capacity;
+        $this->hashmap = [];
+        $this->head = new Node(null, null);
+        $this->tail = new Node(null, null);
+
+        $this->head->setNext($this->tail);
+        $this->tail->setPrevious($this->head);
+    }
+
+    /**
+     * 获取 元素
+     * @param $key
+     * @return null
+     */
+    public function get($key) {
+
+        if (!isset($this->hashmap[$key])) { return null; }
+
+        $node = $this->hashmap[$key];
+        if (count($this->hashmap) == 1) { return $node->getData(); }
+
+        // refresh the access
+        $this->detach($node);
+        $this->attach($this->head, $node);
+
+        return $node->getData();
+    }
+
+    /**
+     * 插入新元素
+     * @param $key
+     * @param $data
+     * @return bool
+     */
+    public function put($key, $data) {
+        if ($this->capacity <= 0) { return false; }
+        if (isset($this->hashmap[$key]) && !empty($this->hashmap[$key])) {
+            $node = $this->hashmap[$key];
+            // update data
+            $this->detach($node);
+            $this->attach($this->head, $node);
+            $node->setData($data);
+        }
+        else {
+            $node = new Node($key, $data);
+            $this->hashmap[$key] = $node;
+            $this->attach($this->head, $node);
+
+            // 检查是不是满了
+            if (count($this->hashmap) > $this->capacity) {
+
+                $nodeToRemove = $this->tail->getPrevious();
+                $this->detach($nodeToRemove);
+                unset($this->hashmap[$nodeToRemove->getKey()]);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 再缓存中删除一个key
+     * @param $key
+     * @return bool
+     */
+    public function remove($key) {
+        if (!isset($this->hashmap[$key])) { return false; }
+        $nodeToRemove = $this->hashmap[$key];
+        $this->detach($nodeToRemove);
+        unset($this->hashmap[$nodeToRemove->getKey()]);
+        return true;
+    }
+
+    /**
+     * @param $head
+     * @param $node
+     */
+    private function attach($head, $node) {
+        $node->setPrevious($head);
+        $node->setNext($head->getNext());
+        $node->getNext()->setPrevious($node);
+        $node->getPrevious()->setNext($node);
+    }
+
+    /**
+     * 从列表中删除节点
+     * @param Node $node the node to remove from the list
+     */
+    private function detach($node) {
+        $node->getPrevious()->setNext($node->getNext());
+        $node->getNext()->setPrevious($node->getPrevious());
+    }
+
+}
+
+/**
+ * 链表类
+ */
+class Node {
+
+
+    private $key;
+
+
+    private $data;
+
+    // 下一个节点
+    private $next;
+
+    // 上一个节点
+    private $previous;
+
+    /**
+     * @param string $key the key of the node
+     * @param string $data the content of the node
+     */
+    public function __construct($key, $data) {
+        $this->key = $key;
+        $this->data = $data;
+    }
+
+    /**
+     * 设置结点数据
+     * @param string the new content of the node
+     */
+    public function setData($data) {
+        $this->data = $data;
+    }
+
+    /**
+     *  将当前节点设置成下一个节点
+     * @param Node $next the next node
+     */
+    public function setNext($next) {
+        $this->next = $next;
+    }
+
+    /**
+     * 将当前节点设置成上一个节点
+     * @param Node $previous the previous node
+     */
+    public function setPrevious($previous) {
+        $this->previous = $previous;
+    }
+
+    /**
+     * 返回节点的key
+     * @return string the key of the node
+     */
+    public function getKey() {
+        return $this->key;
+    }
+
+    /**
+     * 返回节点数据
+     * @return mixed the content of the node
+     */
+    public function getData() {
+        return $this->data;
+    }
+
+    /**
+     *  返回下一个节点
+     * @return Node the next node of the node
+     */
+    public function getNext() {
+        return $this->next;
+    }
+
+    /**
+     * 返回上一个节点
+     * @return Node the previous node of the node
+     */
+    public function getPrevious() {
+        return $this->previous;
+    }
+
+}
